@@ -1,0 +1,175 @@
+# Instagram Clone — Full microservices stack
+# Services: auth:8081 | user:8080 | social:8082 | post:8083 | interaction:8084 | feed:8085
+#
+# NOTE: All 5 service databases (instagram_auth, instagram_users, etc.) live inside
+# ONE MySQL container. This is intentional — each service still has its own isolated
+# database and tables; sharing the container is standard practice for compose dev setups.
+
+x-common-env: &common-env
+  JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key-change-in-prod}
+  INTERNAL_SECRET: ${INTERNAL_SECRET:-internal-secret-key}
+  DB_HOST: mysql
+  DB_PORT: "3306"
+  DB_USER: ${DB_USER}
+  DB_PASSWORD: ${DB_PASSWORD:-apppassword}
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: instagram_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-apppassword}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: instagram_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build:
+      context: ./auth-service
+    container_name: instagram_auth
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      <<: *common-env
+      PORT: "8081"
+      DB_NAME: instagram_auth
+      JWT_EXPIRY: "15m"
+      REFRESH_EXPIRY: "168h"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  user-service:
+    build:
+      context: ./user-service
+    container_name: instagram_user
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *common-env
+      PORT: "8080"
+      DB_NAME: instagram_users
+      AUTH_SERVICE_URL: http://auth-service:8081
+    depends_on:
+      mysql:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+
+  social-service:
+    build:
+      context: ./social-service
+    container_name: instagram_social
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      <<: *common-env
+      PORT: "8082"
+      DB_NAME: instagram_social
+      USER_SERVICE_URL: http://user-service:8080
+    depends_on:
+      mysql:
+        condition: service_healthy
+      user-service:
+        condition: service_started
+
+  post-service:
+    build:
+      context: ./post-service
+    container_name: instagram_post
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      <<: *common-env
+      PORT: "8083"
+      DB_NAME: instagram_posts
+      SOCIAL_SERVICE_URL: http://social-service:8082
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: instagram-media
+      MINIO_PUBLIC_URL: http://localhost:9000
+    depends_on:
+      mysql:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      social-service:
+        condition: service_started
+
+  interaction-service:
+    build:
+      context: ./interaction-service
+    container_name: instagram_interaction
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      <<: *common-env
+      PORT: "8084"
+      DB_NAME: instagram_interactions
+      SOCIAL_SERVICE_URL: http://social-service:8082
+      POST_SERVICE_URL: http://post-service:8083
+    depends_on:
+      mysql:
+        condition: service_healthy
+      social-service:
+        condition: service_started
+      post-service:
+        condition: service_started
+
+  feed-service:
+    build:
+      context: ./feed-service
+    container_name: instagram_feed
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      PORT: "8085"
+      JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key-change-in-prod}
+      INTERNAL_SECRET: ${INTERNAL_SECRET:-internal-secret-key}
+      SOCIAL_SERVICE_URL: http://social-service:8082
+      POST_SERVICE_URL: http://post-service:8083
+    depends_on:
+      social-service:
+        condition: service_started
+      post-service:
+        condition: service_started
+
+volumes:
+  mysql_data:
+  minio_data:
