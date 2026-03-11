@@ -1,0 +1,301 @@
+openapi: 3.0.3
+info:
+  title: "Social Service API"
+  description: "Follow/unfollow, follow requests (private profiles), block/unblock. Port **8082**."
+  version: "1.0.0"
+servers:
+  - url: http://localhost:8082
+    description: social-service
+components:
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: {type: string}
+    FollowRequest:
+      type: object
+      required: [target_user_id]
+      properties:
+        target_user_id: {type: integer, example: 2}
+    RespondRequest:
+      type: object
+      required: [follower_id, accept]
+      properties:
+        follower_id: {type: integer, example: 3}
+        accept:      {type: boolean, example: true}
+    BlockRequest:
+      type: object
+      required: [target_user_id]
+      properties:
+        target_user_id: {type: integer, example: 5}
+    FollowEntry:
+      type: object
+      properties:
+        user_id:    {type: integer, example: 3}
+        username:   {type: string, example: "bob"}
+        status:     {type: string, enum: [pending, accepted]}
+        created_at: {type: string, format: date-time}
+    PaginatedFollowList:
+      type: object
+      properties:
+        data:      {type: array, items: {$ref: '#/components/schemas/FollowEntry'}}
+        total:     {type: integer, example: 40}
+        page:      {type: integer, example: 1}
+        page_size: {type: integer, example: 20}
+        has_more:  {type: boolean, example: false}
+    SocialStatus:
+      type: object
+      properties:
+        is_following:    {type: boolean, example: true}
+        follow_status:   {type: string, enum: [pending, accepted], example: accepted}
+        is_followed_by:  {type: boolean, example: false}
+        is_blocking:     {type: boolean, example: false}
+        is_blocked_by:   {type: boolean, example: false}
+  responses:
+    Unauthorized:
+      description: Missing or invalid Bearer token
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+tags:
+  - name: Follow
+  - name: Block
+  - name: Status
+paths:
+  /api/v1/social/follow:
+    post:
+      tags: [Follow]
+      summary: Follow a user
+      description: |
+        - **Public profile** → followed immediately (status: accepted)
+        - **Private profile** → pending request created; target must accept via /follow-requests/respond
+      security: [{Bearer: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FollowRequest'}
+      responses:
+        '200':
+          description: Followed or request sent
+          content:
+            application/json:
+              example: {message: "follow request sent"}
+        '400': {description: Already following, blocked, or self-follow}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/social/follow/{target_id}:
+    delete:
+      tags: [Follow]
+      summary: Unfollow a user
+      security: [{Bearer: []}]
+      parameters:
+        - name: target_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 2
+      responses:
+        '200':
+          description: Unfollowed
+          content:
+            application/json:
+              example: {message: "unfollowed"}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/social/follow-requests/pending:
+    get:
+      tags: [Follow]
+      summary: List incoming pending follow requests
+      description: Returns users waiting for the authenticated user (who has a private profile) to accept them.
+      security: [{Bearer: []}]
+      parameters:
+        - name: page
+          in: query
+          schema: {type: integer, default: 1}
+        - name: page_size
+          in: query
+          schema: {type: integer, default: 20}
+      responses:
+        '200':
+          description: Pending requests
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaginatedFollowList'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/social/follow-requests/respond:
+    post:
+      tags: [Follow]
+      summary: Accept or reject a follow request
+      security: [{Bearer: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RespondRequest'}
+      responses:
+        '200':
+          description: Accepted or rejected
+          content:
+            application/json:
+              example: {message: "request accepted"}
+        '400': {description: No pending request found}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/social/followers/{follower_id}:
+    delete:
+      tags: [Follow]
+      summary: Remove a follower
+      description: Remove someone from your followers (reverse unfollow).
+      security: [{Bearer: []}]
+      parameters:
+        - name: follower_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 3
+      responses:
+        '200':
+          description: Follower removed
+          content:
+            application/json:
+              example: {message: "follower removed"}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/social/users/{user_id}/followers:
+    get:
+      tags: [Follow]
+      summary: List a user's followers
+      security: [{Bearer: []}]
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 2
+        - name: page
+          in: query
+          schema: {type: integer, default: 1}
+        - name: page_size
+          in: query
+          schema: {type: integer, default: 20}
+      responses:
+        '200':
+          description: Followers
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaginatedFollowList'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/social/users/{user_id}/following:
+    get:
+      tags: [Follow]
+      summary: List who a user is following
+      security: [{Bearer: []}]
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 2
+        - name: page
+          in: query
+          schema: {type: integer, default: 1}
+        - name: page_size
+          in: query
+          schema: {type: integer, default: 20}
+      responses:
+        '200':
+          description: Following
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaginatedFollowList'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/social/block:
+    post:
+      tags: [Block]
+      summary: Block a user
+      description: |
+        Blocks the target. Side effects:
+        - Any follow in either direction is immediately deleted
+        - Blocked user cannot follow you or see your posts
+      security: [{Bearer: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BlockRequest'}
+      responses:
+        '200':
+          description: Blocked
+          content:
+            application/json:
+              example: {message: "user blocked"}
+        '400': {description: Cannot block yourself}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/social/block/{target_id}:
+    delete:
+      tags: [Block]
+      summary: Unblock a user
+      security: [{Bearer: []}]
+      parameters:
+        - name: target_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 5
+      responses:
+        '200':
+          description: Unblocked
+          content:
+            application/json:
+              example: {message: "user unblocked"}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/social/blocked:
+    get:
+      tags: [Block]
+      summary: List users I have blocked
+      security: [{Bearer: []}]
+      parameters:
+        - name: page
+          in: query
+          schema: {type: integer, default: 1}
+        - name: page_size
+          in: query
+          schema: {type: integer, default: 20}
+      responses:
+        '200':
+          description: Blocked list
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaginatedFollowList'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/social/status/{target_id}:
+    get:
+      tags: [Status]
+      summary: Get full social relationship with a user
+      description: Use this to determine what button to show on a profile page (Follow / Pending / Unfollow / Blocked).
+      security: [{Bearer: []}]
+      parameters:
+        - name: target_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 2
+      responses:
+        '200':
+          description: Relationship status
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SocialStatus'}
+        '401': {$ref: '#/components/responses/Unauthorized'}

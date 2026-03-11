@@ -1,0 +1,206 @@
+openapi: 3.0.3
+info:
+  title: "Interaction Service API"
+  description: "Likes and comments on posts. Port **8084**."
+  version: "1.0.0"
+servers:
+  - url: http://localhost:8084
+    description: interaction-service
+components:
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: {type: string}
+    Comment:
+      type: object
+      properties:
+        id:         {type: integer, example: 201}
+        post_id:    {type: integer, example: 10}
+        user_id:    {type: integer, example: 1}
+        body:       {type: string, example: "Great shot!"}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    PaginatedComments:
+      type: object
+      properties:
+        data:      {type: array, items: {$ref: '#/components/schemas/Comment'}}
+        total:     {type: integer, example: 25}
+        page:      {type: integer, example: 1}
+        page_size: {type: integer, example: 20}
+        has_more:  {type: boolean, example: true}
+  responses:
+    Unauthorized:
+      description: Missing or invalid Bearer token
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+tags:
+  - name: Likes
+  - name: Comments
+paths:
+  /api/v1/posts/{post_id}/like:
+    post:
+      tags: [Likes]
+      summary: Like a post
+      description: Liking an already-liked post is a no-op (idempotent).
+      security: [{Bearer: []}]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 10
+      responses:
+        '200':
+          description: Liked
+          content:
+            application/json:
+              example: {message: "liked"}
+        '400': {description: Post not found or access denied}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    delete:
+      tags: [Likes]
+      summary: Unlike a post
+      security: [{Bearer: []}]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 10
+      responses:
+        '200':
+          description: Unliked
+          content:
+            application/json:
+              example: {message: "unliked"}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/posts/{post_id}/liked:
+    get:
+      tags: [Likes]
+      summary: Check if I liked a post
+      security: [{Bearer: []}]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 10
+      responses:
+        '200':
+          description: Like status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  liked: {type: boolean, example: true}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/posts/{post_id}/comments:
+    post:
+      tags: [Comments]
+      summary: Add a comment
+      security: [{Bearer: []}]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 10
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: {type: string, minLength: 1, maxLength: 2200, example: "Amazing shot!"}
+      responses:
+        '201':
+          description: Comment created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Comment'}
+        '400': {description: Post not found or access denied}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    get:
+      tags: [Comments]
+      summary: List comments on a post
+      security: [{Bearer: []}]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 10
+        - name: page
+          in: query
+          schema: {type: integer, default: 1}
+        - name: page_size
+          in: query
+          schema: {type: integer, default: 20}
+      responses:
+        '200':
+          description: Comments
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaginatedComments'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/comments/{comment_id}:
+    patch:
+      tags: [Comments]
+      summary: Edit a comment
+      description: Only the comment author can edit it.
+      security: [{Bearer: []}]
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 201
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: {type: string, minLength: 1, maxLength: 2200, example: "Edited comment"}
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              example: {message: "comment updated"}
+        '403': {description: Not the comment author}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    delete:
+      tags: [Comments]
+      summary: Delete a comment
+      description: Only the comment author can delete it.
+      security: [{Bearer: []}]
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 201
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              example: {message: "comment deleted"}
+        '403': {description: Not the comment author}
+        '401': {$ref: '#/components/responses/Unauthorized'}

@@ -1,0 +1,324 @@
+openapi: 3.0.3
+info:
+  title: "User Service API"
+  description: "Auth, registration, profile management, user search. Port **8080**."
+  version: "1.0.0"
+servers:
+  - url: http://localhost:8080
+    description: user-service
+components:
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: {type: string, example: "invalid credentials"}
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:  {type: string, minLength: 3, maxLength: 30, example: "alice"}
+        email:     {type: string, format: email, example: "alice@example.com"}
+        password:  {type: string, minLength: 8, example: "password123"}
+        full_name: {type: string, example: "Alice Smith"}
+    LoginRequest:
+      type: object
+      required: [username_or_email, password]
+      properties:
+        username_or_email: {type: string, example: "alice"}
+        password:          {type: string, example: "password123"}
+    ChangePasswordRequest:
+      type: object
+      required: [old_password, new_password]
+      properties:
+        old_password: {type: string, example: "password123"}
+        new_password: {type: string, minLength: 8, example: "newpassword456"}
+    UpdateProfileRequest:
+      type: object
+      properties:
+        full_name:  {type: string, example: "Alice Smith"}
+        bio:        {type: string, example: "Just here for the vibes"}
+        website:    {type: string, example: "https://alice.dev"}
+        is_private: {type: boolean, example: false}
+    UpdateAvatarRequest:
+      type: object
+      required: [avatar_url]
+      properties:
+        avatar_url: {type: string, format: uri, example: "http://localhost:9000/instagram-media/users/1/avatar.jpg"}
+    UserPublicProfile:
+      type: object
+      properties:
+        id:              {type: integer, example: 1}
+        username:        {type: string, example: "alice"}
+        full_name:       {type: string, example: "Alice Smith"}
+        bio:             {type: string, example: "Just here for the vibes"}
+        avatar_url:      {type: string, example: "http://localhost:9000/instagram-media/users/1/avatar.jpg"}
+        website:         {type: string, example: "https://alice.dev"}
+        is_private:      {type: boolean, example: false}
+        is_verified:     {type: boolean, example: false}
+        post_count:      {type: integer, example: 5}
+        follower_count:  {type: integer, example: 120}
+        following_count: {type: integer, example: 80}
+        created_at:      {type: string, format: date-time}
+    UserMe:
+      allOf:
+        - $ref: '#/components/schemas/UserPublicProfile'
+        - type: object
+          properties:
+            email:     {type: string, example: "alice@example.com"}
+            role:      {type: string, enum: [user, moderator, admin]}
+            is_active: {type: boolean, example: true}
+    AuthResponse:
+      type: object
+      properties:
+        user:          {$ref: '#/components/schemas/UserPublicProfile'}
+        access_token:  {type: string, example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxfQ.abc"}
+        refresh_token: {type: string, example: "c29tZXJhbmRvbXJlZnJlc2h0b2tlbg=="}
+        expires_at:    {type: string, format: date-time}
+        token_type:    {type: string, example: "Bearer"}
+    PaginatedProfiles:
+      type: object
+      properties:
+        data:      {type: array, items: {$ref: '#/components/schemas/UserPublicProfile'}}
+        total:     {type: integer, example: 42}
+        page:      {type: integer, example: 1}
+        page_size: {type: integer, example: 20}
+        has_more:  {type: boolean, example: true}
+  responses:
+    Unauthorized:
+      description: Missing or invalid Bearer token
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+tags:
+  - name: Auth
+  - name: Profile
+  - name: Search
+paths:
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RegisterRequest'}
+      responses:
+        '201':
+          description: Account created — save access_token and refresh_token
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthResponse'}
+        '400': {description: Validation error}
+        '409': {description: Username or email already taken}
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LoginRequest'}
+      responses:
+        '200':
+          description: OK — use access_token as Bearer for all further requests
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthResponse'}
+        '401': {description: Invalid credentials}
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      description: Exchange a refresh token for a new token pair. Old refresh token is immediately invalidated.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: {type: string, example: "c29tZXJhbmRvbXJlZnJlc2h0b2tlbg=="}
+      responses:
+        '200':
+          description: New token pair
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthResponse'}
+        '401': {description: Refresh token expired or invalid}
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout current device
+      description: Blacklists the current access token.
+      security: [{Bearer: []}]
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              example: {message: "logged out"}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/auth/logout-all:
+    post:
+      tags: [Auth]
+      summary: Logout all devices
+      description: Invalidates ALL refresh tokens for this user — every device must re-login.
+      security: [{Bearer: []}]
+      responses:
+        '200':
+          description: All sessions terminated
+          content:
+            application/json:
+              example: {message: "all sessions terminated"}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/auth/change-password:
+    put:
+      tags: [Auth]
+      summary: Change password
+      description: Verifies old password, sets new one, then invalidates all sessions.
+      security: [{Bearer: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChangePasswordRequest'}
+      responses:
+        '200':
+          description: Password changed
+          content:
+            application/json:
+              example: {message: "password changed, all sessions terminated"}
+        '400': {description: Wrong old password}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/users/me:
+    get:
+      tags: [Profile]
+      summary: Get my own profile
+      description: Returns full profile including email and role (private fields).
+      security: [{Bearer: []}]
+      responses:
+        '200':
+          description: Own profile
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UserMe'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    put:
+      tags: [Profile]
+      summary: Update my profile
+      description: Only fields you include are updated (partial update).
+      security: [{Bearer: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateProfileRequest'}
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UserMe'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    delete:
+      tags: [Profile]
+      summary: Delete account
+      description: Soft-deletes the account and invalidates all sessions.
+      security: [{Bearer: []}]
+      responses:
+        '200':
+          description: Account deleted
+          content:
+            application/json:
+              example: {message: "account deleted"}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/users/me/avatar:
+    put:
+      tags: [Profile]
+      summary: Set avatar URL
+      description: Upload the image via post-service first, then pass the returned MinIO URL here.
+      security: [{Bearer: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateAvatarRequest'}
+      responses:
+        '200':
+          description: Avatar updated
+          content:
+            application/json:
+              example: {message: "avatar updated"}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/users/{username}/profile:
+    get:
+      tags: [Profile]
+      summary: Get public profile
+      description: |
+        Returns profile data only. Social status (is_following, is_blocked)
+        is fetched separately from social-service at localhost:8082.
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema: {type: string}
+          example: alice
+      responses:
+        '200':
+          description: Public profile
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UserPublicProfile'}
+        '404': {description: User not found}
+
+  /api/v1/users/search:
+    get:
+      tags: [Search]
+      summary: Search users by username or name
+      security: [{Bearer: []}]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: {type: string}
+          example: alice
+        - name: page
+          in: query
+          schema: {type: integer, default: 1}
+        - name: page_size
+          in: query
+          schema: {type: integer, default: 20, maximum: 50}
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaginatedProfiles'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/health:
+    get:
+      tags: [Auth]
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example: {status: "ok", service: "user"}

@@ -1,0 +1,80 @@
+openapi: 3.0.3
+info:
+  title: "Feed Service API"
+  description: "Chronological timeline of posts from followed users. Port **8085**."
+  version: "1.0.0"
+servers:
+  - url: http://localhost:8085
+    description: feed-service
+components:
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: {type: string}
+    PostMedia:
+      type: object
+      properties:
+        id:         {type: integer, example: 1}
+        media_url:  {type: string, example: "http://localhost:9000/instagram-media/users/1/2026/03/abc.jpg"}
+        media_type: {type: string, enum: [image, video]}
+        position:   {type: integer, example: 0}
+    FeedPost:
+      type: object
+      properties:
+        id:            {type: integer, example: 10}
+        user_id:       {type: integer, example: 1}
+        caption:       {type: string, example: "Golden hour 🌅"}
+        like_count:    {type: integer, example: 54}
+        comment_count: {type: integer, example: 7}
+        media:
+          type: array
+          items: {$ref: '#/components/schemas/PostMedia'}
+        created_at: {type: string, format: date-time}
+    FeedResponse:
+      type: object
+      properties:
+        posts:     {type: array, items: {$ref: '#/components/schemas/FeedPost'}}
+        total:     {type: integer, example: 200}
+        page:      {type: integer, example: 1}
+        page_size: {type: integer, example: 20}
+        has_more:  {type: boolean, example: true}
+  responses:
+    Unauthorized:
+      description: Missing or invalid Bearer token
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+tags:
+  - name: Feed
+paths:
+  /api/v1/feed:
+    get:
+      tags: [Feed]
+      summary: Get timeline
+      description: |
+        Returns posts from everyone the authenticated user follows, plus
+        their own posts, sorted newest-first. Use `page` to paginate.
+      security: [{Bearer: []}]
+      parameters:
+        - name: page
+          in: query
+          schema: {type: integer, default: 1}
+          example: 1
+        - name: page_size
+          in: query
+          schema: {type: integer, default: 20, maximum: 50}
+          example: 20
+      responses:
+        '200':
+          description: Feed
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FeedResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500': {description: Upstream service error (social or post service down)}

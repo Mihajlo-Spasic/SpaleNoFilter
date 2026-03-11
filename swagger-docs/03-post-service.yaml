@@ -1,0 +1,226 @@
+openapi: 3.0.3
+info:
+  title: "Post Service API"
+  description: "Create posts with media, view/edit/delete posts and media files. Port **8083**."
+  version: "1.0.0"
+servers:
+  - url: http://localhost:8083
+    description: post-service
+components:
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: {type: string}
+    PostMedia:
+      type: object
+      properties:
+        id:         {type: integer, example: 1}
+        post_id:    {type: integer, example: 10}
+        media_url:  {type: string, example: "http://localhost:9000/instagram-media/users/1/2026/03/abc123.jpg"}
+        media_type: {type: string, enum: [image, video], example: image}
+        position:   {type: integer, example: 0}
+        size_bytes: {type: integer, example: 2048000}
+        created_at: {type: string, format: date-time}
+    Post:
+      type: object
+      properties:
+        id:            {type: integer, example: 10}
+        user_id:       {type: integer, example: 1}
+        caption:       {type: string, example: "Golden hour 🌅"}
+        like_count:    {type: integer, example: 54}
+        comment_count: {type: integer, example: 7}
+        media:
+          type: array
+          items: {$ref: '#/components/schemas/PostMedia'}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    PostSummary:
+      type: object
+      description: Lightweight post for profile grids
+      properties:
+        id:            {type: integer, example: 10}
+        user_id:       {type: integer, example: 1}
+        thumbnail_url: {type: string, example: "http://localhost:9000/instagram-media/users/1/2026/03/abc123.jpg"}
+        like_count:    {type: integer, example: 54}
+        comment_count: {type: integer, example: 7}
+        media_count:   {type: integer, example: 3}
+        created_at:    {type: string, format: date-time}
+    PaginatedSummaries:
+      type: object
+      properties:
+        data:      {type: array, items: {$ref: '#/components/schemas/PostSummary'}}
+        total:     {type: integer, example: 20}
+        page:      {type: integer, example: 1}
+        page_size: {type: integer, example: 12}
+        has_more:  {type: boolean, example: true}
+  responses:
+    Unauthorized:
+      description: Missing or invalid Bearer token
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+tags:
+  - name: Posts
+paths:
+  /api/v1/posts:
+    post:
+      tags: [Posts]
+      summary: Create a post
+      description: |
+        Upload 1–20 media files as a multipart form. Files are stored in MinIO.
+
+        **Limits:** max 20 files per post, max 50 MB per file.
+        **Images:** jpg, jpeg, png, gif, webp
+        **Videos:** mp4, mov, avi, mkv, webm
+      security: [{Bearer: []}]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [files]
+              properties:
+                files:
+                  type: array
+                  items: {type: string, format: binary}
+                  description: 1–20 image or video files
+                caption:
+                  type: string
+                  maxLength: 2200
+                  example: "Golden hour 🌅"
+      responses:
+        '201':
+          description: Post created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Post'}
+        '400': {description: No files, too many files, file too large, unsupported format}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/posts/{post_id}:
+    get:
+      tags: [Posts]
+      summary: Get a post
+      description: Returns full post with all media. Blocked or private-profile posts return 404.
+      security: [{Bearer: []}]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 10
+      responses:
+        '200':
+          description: Post
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Post'}
+        '404': {description: Not found or access denied}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    delete:
+      tags: [Posts]
+      summary: Delete a post
+      description: Soft-deletes post and removes all media from MinIO. Must be the post owner.
+      security: [{Bearer: []}]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 10
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              example: {message: "post deleted"}
+        '403': {description: Not the post owner}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/posts/{post_id}/caption:
+    patch:
+      tags: [Posts]
+      summary: Update post caption
+      security: [{Bearer: []}]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 10
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                caption: {type: string, maxLength: 2200, example: "Updated caption ✨"}
+      responses:
+        '200':
+          description: Caption updated
+          content:
+            application/json:
+              example: {message: "caption updated"}
+        '403': {description: Not the post owner}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/posts/{post_id}/media/{media_id}:
+    delete:
+      tags: [Posts]
+      summary: Delete one media item from a post
+      description: Removes a single image/video from a carousel. The post itself stays.
+      security: [{Bearer: []}]
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 10
+        - name: media_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 3
+      responses:
+        '200':
+          description: Media removed
+          content:
+            application/json:
+              example: {message: "media removed"}
+        '403': {description: Not the post owner}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /api/v1/users/{user_id}/posts:
+    get:
+      tags: [Posts]
+      summary: Get a user's post gallery
+      description: Returns paginated post summaries. Returns 403 for private profiles you don't follow.
+      security: [{Bearer: []}]
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: integer}
+          example: 1
+        - name: page
+          in: query
+          schema: {type: integer, default: 1}
+        - name: page_size
+          in: query
+          schema: {type: integer, default: 12, maximum: 50}
+      responses:
+        '200':
+          description: Post gallery
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaginatedSummaries'}
+        '403': {description: Private profile — not following}
+        '401': {$ref: '#/components/responses/Unauthorized'}
