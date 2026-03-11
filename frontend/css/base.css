@@ -1,0 +1,265 @@
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --bg:      #0a0a0b;
+  --bg2:     #111113;
+  --bg3:     #18181c;
+  --bg4:     #1f1f25;
+  --border:  #2a2a32;
+  --border2: #35353f;
+  --text:    #f0ede8;
+  --text2:   #9a9890;
+  --text3:   #5a5856;
+  --gold:    #c8a96e;
+  --gold2:   #e8c98e;
+  --red:     #e05555;
+  --green:   #5aad7a;
+  --sw:      240px;
+}
+
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── Typography ────────────────────────────────────────────────────────────── */
+.font-serif { font-family: 'Cormorant Garamond', serif; }
+.font-mono  { font-family: 'DM Mono', monospace; }
+.trunc      { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn.sm  { padding: 6px 14px; font-size: 12px; }
+.btn.wa  { width: auto !important; }
+.btn.full { width: 100%; }
+
+/* Primary — gold */
+.btn-primary             { background: var(--gold); color: #1a1408; }
+.btn-primary:hover       { background: var(--gold2); }
+
+/* Outline */
+.btn-outline             { background: transparent; border: 1px solid var(--border2); color: var(--text2); }
+.btn-outline:hover       { border-color: var(--gold); color: var(--gold); }
+
+/* Ghost */
+.btn-ghost               { background: transparent; color: var(--text2); }
+.btn-ghost:hover         { color: var(--text); }
+
+/* Danger */
+.btn-danger              { background: transparent; border: 1px solid var(--red); color: var(--red); }
+.btn-danger:hover        { background: var(--red); color: #fff; }
+
+/* ── Forms ─────────────────────────────────────────────────────────────────── */
+.form-group { margin-bottom: 16px; }
+
+.form-group label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 10px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus { border-color: var(--gold); }
+
+.form-group textarea { resize: vertical; min-height: 80px; }
+
+/* ── Error banner ──────────────────────────────────────────────────────────── */
+.error-msg {
+  background: rgba(224, 85, 85, 0.1);
+  border: 1px solid rgba(224, 85, 85, 0.3);
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: var(--red);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+/* ── Badges ────────────────────────────────────────────────────────────────── */
+.badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+.badge-private  { background: rgba(90,90,90,.3);    color: var(--text3);  border: 1px solid var(--border); }
+.badge-follows  { background: rgba(90,173,122,.1);  color: var(--green);  border: 1px solid rgba(90,173,122,.3); }
+
+/* ── Notification dot ──────────────────────────────────────────────────────── */
+.notif-dot {
+  background: var(--gold);
+  color: #1a1408;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 1px 6px;
+  margin-left: auto;
+}
+
+/* ── Divider ───────────────────────────────────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+/* ── Loading / empty states ────────────────────────────────────────────────── */
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text3);
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 12px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text3);
+}
+.empty-state svg  { width: 48px; height: 48px; margin: 0 auto 16px; opacity: 0.3; display: block; }
+.empty-state p    { font-size: 15px; }
+.empty-state small { font-size: 12px; display: block; margin-top: 6px; opacity: 0.6; }
+
+/* ── Avatar ────────────────────────────────────────────────────────────────── */
+.avatar {
+  border-radius: 50%;
+  background: var(--bg4);
+  border: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text3);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.avatar-sm  { width: 36px; height: 36px; font-size: 13px; }
+.avatar-md  { width: 46px; height: 46px; font-size: 16px; }
+.avatar-lg  { width: 90px; height: 90px; font-size: 28px; border-width: 2px; }
+
+.avatar-wrap              { position: relative; display: inline-block; cursor: pointer; }
+.avatar-wrap:hover .avatar-overlay { opacity: 1; }
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  flex-direction: column;
+  gap: 3px;
+  color: #fff;
+  font-size: 10px;
+  text-align: center;
+}
+
+/* ── Upload drop zone ──────────────────────────────────────────────────────── */
+.upload-area {
+  border: 2px dashed var(--border2);
+  border-radius: 10px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+}
+.upload-area:hover    { border-color: var(--gold); background: rgba(200,169,110,.03); }
+.upload-area.has-files { border-color: var(--green); }
+.upload-area p { color: var(--text3); font-size: 13px; margin-top: 8px; }
+.upload-area p.hint { font-size: 11px; margin-top: 4px; }
+
+/* ── Toggle switch ─────────────────────────────────────────────────────────── */
+.toggle       { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+.toggle input { display: none; }
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--bg4);
+  border-radius: 11px;
+  border: 1px solid var(--border2);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  left: 3px; top: 3px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--text3);
+  transition: all 0.2s;
+}
+.toggle input:checked + .toggle-track              { background: var(--gold); border-color: var(--gold); }
+.toggle input:checked + .toggle-track::after       { left: 21px; background: #1a1408; }
+
+/* ── Toast ─────────────────────────────────────────────────────────────────── */
+#toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 999;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ── Animations ────────────────────────────────────────────────────────────── */
+@keyframes fade-up   { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fade-in   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes spin      { to { transform: rotate(360deg); } }
