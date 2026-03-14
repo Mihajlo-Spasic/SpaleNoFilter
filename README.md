@@ -19,3 +19,4 @@ Pokreni samo integration testove:
 INTERNAL_SECRET=internal-service-to-service-secret-key go test ./... -run "^TestIntegration" -timeout 120s
 ```
 # test
+# test
