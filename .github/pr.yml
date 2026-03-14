@@ -1,0 +1,35 @@
+name: Pull Request — Unit Tests
+
+on:
+  pull_request:
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: tests/go.mod
+          cache: true
+          cache-dependency-path: tests/go.sum
+
+      - name: Download test dependencies
+        working-directory: tests
+        run: go mod download
+
+      - name: Run unit tests
+        working-directory: tests
+        run: |
+          go test ./... \
+            -run '^Test[^I]' \
+            -v \
+            -timeout 120s \
+            -count=1
+        env:
+          INTERNAL_SECRET: internal-service-to-service-secret-key

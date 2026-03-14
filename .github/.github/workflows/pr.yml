@@ -1,0 +1,41 @@
+name: Pull Request — Unit Tests
+
+# Triggers on every pull request (opened, updated, reopened).
+# No Docker builds or registry secrets are needed here.
+on:
+  pull_request:
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: tests/go.mod
+          cache: true
+          cache-dependency-path: tests/go.sum
+
+      - name: Download test dependencies
+        working-directory: tests
+        run: go mod download
+
+      # Run every test whose name does NOT start with "TestIntegration".
+      # The integration tests self-skip when the stack is not running (TestMain
+      # checks health endpoints and calls os.Exit(0) on timeout), but being
+      # explicit is cleaner and keeps the PR check fast.
+      - name: Run unit tests
+        working-directory: tests
+        run: |
+          go test ./... \
+            -run '^Test[^I]' \
+            -v \
+            -timeout 120s \
+            -count=1
+        env:
+          INTERNAL_SECRET: internal-service-to-service-secret-key
