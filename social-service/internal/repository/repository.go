@@ -176,13 +176,10 @@ func scanEntries(rows *sql.Rows) []models.FollowEntry {
 	return out
 }
 
-// ─── Block Repository ─────────────────────────────────────────────────────────
-
 type BlockRepository interface {
 	Block(blockerID, blockedID uint64) error
 	Unblock(blockerID, blockedID uint64) error
 	IsBlocked(blockerID, blockedID uint64) (bool, error)
-	// Either direction blocked
 	EitherBlocked(a, b uint64) (bool, error)
 	ListBlocked(blockerID uint64, page, size int) ([]models.FollowEntry, int64, error)
 }

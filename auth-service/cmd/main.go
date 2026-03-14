@@ -26,7 +26,6 @@ func main() {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
-	// Dependency injection: Repository → Service → Controller
 	tokenRepo := repository.NewTokenRepository(db)
 	authService := service.NewAuthService(tokenRepo, cfg)
 	authController := controller.NewAuthController(authService)
@@ -43,7 +42,6 @@ func main() {
 		api.GET("/health", authController.Health)
 	}
 
-	// Internal routes (called by user-service)
 	internal := r.Group("/internal/auth")
 	internal.Use(middleware.InternalOnly(cfg.InternalSecret))
 	{
