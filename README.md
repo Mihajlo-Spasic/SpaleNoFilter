@@ -26,6 +26,8 @@ Media files are stored in **MinIO object storage**.
 | MinIO API | 9000 |
 | MinIO Console | 9001 |
 
+![AppDesignDiagram](https://github.com/Mihajlo-Spasic/SpaleNoFilter/blob/main/AppDesignDiagram.jpg)
+
 ---
 
 # Technology Stack
