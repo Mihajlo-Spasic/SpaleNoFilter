@@ -140,7 +140,7 @@ func (s *authService) RefreshAccessToken(rawRefreshToken string) (*models.TokenP
 	// Here we issue with stored user_id (minimal info); user-service can re-validate
 	req := &models.IssueTokenRequest{
 		UserID:    storedToken.UserID,
-		Username:  "", // will be enriched by user-service if needed
+		Username:  "",
 		UserAgent: storedToken.UserAgent,
 		IPAddress: storedToken.IPAddress,
 	}

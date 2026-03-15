@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lumina</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+<!-- ── Toast notification ─────────────────────────────────────────────────── -->
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     AUTH SCREEN
+════════════════════════════════════════════════════════════════════════════ -->
+<div id="auth">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <h1>Lumina</h1>
+      <p>Share your world</p>
+    </div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab on" onclick="authTab('login')">Sign In</div>
+      <div class="auth-tab"    onclick="authTab('reg')">Create Account</div>
+    </div>
+
+    <!-- Login form -->
+    <div id="login-form">
+      <div id="login-error" class="error-msg" style="display:none"></div>
+      <div class="form-group">
+        <label>Username or Email</label>
+        <input id="login-identifier" type="text" placeholder="your_username">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input id="login-password" type="password" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary full" onclick="doLogin()">Sign In</button>
+    </div>
+
+    <!-- Register form -->
+    <div id="register-form" style="display:none">
+      <div id="register-error" class="error-msg" style="display:none"></div>
+      <div class="form-group">
+        <label>Username</label>
+        <input id="reg-username" type="text" placeholder="johndoe">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input id="reg-email" type="email" placeholder="john@example.com">
+      </div>
+      <div class="form-group">
+        <label>Full Name</label>
+        <input id="reg-fullname" type="text" placeholder="John Doe">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input id="reg-password" type="password" placeholder="Min. 8 characters">
+      </div>
+      <button class="btn btn-primary full" onclick="doRegister()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     APP SHELL
+════════════════════════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-brand"><h1>Lumina</h1></div>
+
+    <div class="nav-item on" data-page="feed" onclick="nav('feed')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      Feed
+    </div>
+
+    <div class="nav-item" data-page="search" onclick="nav('search')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
+      Explore
+    </div>
+
+    <div class="nav-item" onclick="openUploadModal()">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v8M8 12h8"/></svg>
+      New Post
+    </div>
+
+    <div class="nav-item" data-page="notif" onclick="nav('notif')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      Requests
+      <span id="notif-badge" class="notif-dot" style="display:none">0</span>
+    </div>
+
+    <div class="nav-item" data-page="profile" onclick="nav('profile')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      Profile
+    </div>
+
+    <div class="nav-item" data-page="settings" onclick="nav('settings')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      Settings
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user" onclick="nav('profile')">
+        <div class="avatar avatar-sm" id="sidebar-avatar"></div>
+        <div style="flex:1;min-width:0">
+          <div class="trunc" style="font-size:13px;font-weight:500" id="sidebar-username"></div>
+          <div style="font-size:11px;color:var(--text3)">View profile</div>
+        </div>
+        <button class="btn btn-ghost sm" style="padding:4px 8px" onclick="event.stopPropagation();doLogout()">
+          <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="width:15px;height:15px"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main pages -->
+  <main class="main">
+
+    <!-- Feed -->
+    <div class="page on" id="page-feed">
+      <div class="page-header"><h2 class="page-title">Feed</h2></div>
+      <div class="feed-wrap">
+        <div id="feed-container"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        <div id="feed-more" style="text-align:center;padding:20px;display:none">
+          <button class="btn btn-outline sm" onclick="moreFeed()">Load more</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Explore / Search -->
+    <div class="page" id="page-search">
+      <div class="page-header"><h2 class="page-title">Explore</h2></div>
+      <div class="search-bar">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="search-input" placeholder="Search people…" oninput="onSearchInput()">
+      </div>
+      <div id="search-results"></div>
+    </div>
+
+    <!-- Follow requests -->
+    <div class="page" id="page-notif">
+      <div class="page-header"><h2 class="page-title">Follow Requests</h2></div>
+      <div id="requests-container"></div>
+    </div>
+
+    <!-- Own profile -->
+    <div class="page" id="page-profile">
+      <div id="profile-container"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+    </div>
+
+    <!-- Settings -->
+    <div class="page" id="page-settings">
+      <div class="page-header"><h2 class="page-title">Settings</h2></div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">Profile</div>
+        <div style="padding:20px">
+          <div class="form-group"><label>Full Name</label><input id="settings-fullname" type="text"></div>
+          <div class="form-group"><label>Bio</label><textarea id="settings-bio"></textarea></div>
+          <div class="form-group"><label>Website</label><input id="settings-website" type="text" placeholder="https://"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <label style="font-size:13px;color:var(--text2)">Private Account</label>
+            <label class="toggle"><input type="checkbox" id="settings-private"><span class="toggle-track"></span></label>
+          </div>
+          <button class="btn btn-primary wa" onclick="saveProfile()">Save Changes</button>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">Security</div>
+        <div style="padding:20px">
+          <div class="form-group"><label>Current Password</label><input id="settings-old-password" type="password" placeholder="••••••••"></div>
+          <div class="form-group"><label>New Password</label><input id="settings-new-password" type="password" placeholder="Min. 8 characters"></div>
+          <button class="btn btn-outline wa" onclick="changePassword()">Change Password</button>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">Account</div>
+        <div class="settings-row">
+          <label>Log out of all devices</label>
+          <button class="btn btn-outline sm" onclick="doLogoutAll()">Logout All</button>
+        </div>
+        <div class="settings-row">
+          <label style="color:var(--red)">Delete Account</label>
+          <button class="btn btn-danger sm" onclick="deleteAccount()">Delete</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div><!-- #app -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MODALS
+════════════════════════════════════════════════════════════════════════════ -->
+
+<!-- New post -->
+<div class="modal-overlay" id="modal-upload">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">New Post</span>
+      <button class="modal-close" onclick="closeModal('modal-upload')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:20px;height:20px"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="upload-area" id="upload-dropzone" onclick="document.getElementById('upload-file-input').click()">
+        <div style="font-size:32px">📷</div>
+        <p>Click to select photos or videos</p>
+        <p class="hint">Up to 20 files · max 50 MB each</p>
+        <input type="file" id="upload-file-input" multiple accept="image/*,video/*" style="display:none"
+               onchange="onUploadFilesSelected(this.files)">
+      </div>
+      <div id="upload-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
+      <div class="form-group">
+        <label>Caption</label>
+        <textarea id="upload-caption" placeholder="Write a caption…"></textarea>
+      </div>
+      <div id="upload-error" class="error-msg" style="display:none"></div>
+      <button class="btn btn-primary full" id="upload-submit-btn" onclick="submitPost()">Share Post</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change avatar -->
+<div class="modal-overlay" id="modal-avatar">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <span class="modal-title">Change Photo</span>
+      <button class="modal-close" onclick="closeModal('modal-avatar')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:20px;height:20px"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="upload-area" id="avatar-dropzone" onclick="document.getElementById('avatar-file-input').click()">
+        <div style="font-size:32px">🖼</div>
+        <p>Click to select a photo</p>
+        <p class="hint">JPEG · PNG · WebP</p>
+        <input type="file" id="avatar-file-input" accept="image/*" style="display:none"
+               onchange="onAvatarFileSelected(this.files)">
+      </div>
+      <div id="avatar-preview" style="display:none;text-align:center;margin-bottom:16px">
+        <img id="avatar-preview-img" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)" alt="Preview">
+      </div>
+      <div id="avatar-error" class="error-msg" style="display:none"></div>
+      <button class="btn btn-primary full" id="avatar-submit-btn" onclick="uploadAvatar()">Upload Photo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Post detail -->
+<div class="modal-overlay" id="modal-post">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <span class="modal-title" id="post-modal-title">Post</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost sm"   id="post-modal-edit-btn"   onclick="startEditCaption()"  style="display:none">Edit</button>
+        <button class="btn btn-danger sm"  id="post-modal-delete-btn" onclick="deletePost()"         style="display:none">Delete</button>
+        <button class="modal-close" onclick="closeModal('modal-post')">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:20px;height:20px"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="modal-body" id="post-modal-body"></div>
+  </div>
+</div>
+
+<!-- User profile -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <span class="modal-title" id="user-modal-title">Profile</span>
+      <button class="modal-close" onclick="closeModal('modal-user')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:20px;height:20px"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="user-modal-body"></div>
+  </div>
+</div>
+
+<!-- Followers / following / blocked list -->
+<div class="modal-overlay" id="modal-list">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title" id="list-modal-title">List</span>
+      <button class="modal-close" onclick="closeModal('modal-list')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:20px;height:20px"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="list-modal-body"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SCRIPTS — order matters: api and state first, then feature modules
+════════════════════════════════════════════════════════════════════════════ -->
+<script src="js/api.js"></script>
+<script src="js/state.js"></script>
+<script src="js/modals.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/social.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/auth.js"></script>
+
+</body>
+</html>

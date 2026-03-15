@@ -1,0 +1,84 @@
+/* ── App shell ─────────────────────────────────────────────────────────────── */
+#app         { display: none; min-height: 100vh; }
+#app.visible { display: flex; }
+
+/* ── Sidebar ───────────────────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sw);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  padding: 24px 0;
+}
+
+.sidebar-brand {
+  padding: 0 20px 28px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.sidebar-brand h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 300;
+  letter-spacing: 3px;
+  color: var(--gold);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 20px;
+  cursor: pointer;
+  color: var(--text2);
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+  font-size: 14px;
+}
+.nav-item:hover         { color: var(--text); background: var(--bg3); }
+.nav-item.on            { color: var(--gold); border-left-color: var(--gold); background: rgba(200,169,110,.05); }
+.nav-item svg           { width: 18px; height: 18px; flex-shrink: 0; }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.sidebar-user:hover { background: var(--bg3); }
+
+/* ── Main content area ─────────────────────────────────────────────────────── */
+.main { margin-left: var(--sw); flex: 1; min-height: 100vh; }
+
+.page {
+  display: none;
+  padding: 32px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.page.on { display: block; animation: fade-up 0.3s ease; }
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+.page-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: 1px;
+}
