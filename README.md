@@ -11,19 +11,19 @@ The project demonstrates modern **DevOps practices**, including containerization
 
 The application is composed of independent **microservices**, each responsible for a specific domain.
 
-| Service | Port | Responsibility |
-|------|------|------|
-| user-service | 8080 | Authentication, user profiles, search |
-| social-service | 8082 | Follow system, follow requests, blocking |
-| post-service | 8083 | Post creation, media uploads |
-| interaction-service | 8084 | Likes and comments |
-| feed-service | 8085 | Timeline feed generation |
+| Service             | Port | Responsibility                           |
+| ------------------- | ---- | ---------------------------------------- |
+| user-service        | 8080 | Authentication, user profiles, search    |
+| social-service      | 8082 | Follow system, follow requests, blocking |
+| post-service        | 8083 | Post creation, media uploads             |
+| interaction-service | 8084 | Likes and comments                       |
+| feed-service        | 8085 | Timeline feed generation                 |
 
 Media files are stored in **MinIO object storage**.
 
-| Tool | Port |
-|-----|-----|
-| MinIO API | 9000 |
+| Tool          | Port |
+| ------------- | ---- |
+| MinIO API     | 9000 |
 | MinIO Console | 9001 |
 
 ### App Design Diagram
@@ -35,23 +35,28 @@ Media files are stored in **MinIO object storage**.
 # Technology Stack
 
 ### Backend
+
 - Go (Golang)
 - REST API
 - JWT Authentication
 - Microservices architecture
 
 ### Database
+
 - MySQL
 
 ### Storage
+
 - MinIO (object storage for images and videos)
 
 ### DevOps
+
 - Docker
 - Docker Compose
 - GitHub Actions (CI)
 
 ### Testing
+
 - Unit tests
 - Integration tests (API)
 - UI integration tests
@@ -85,9 +90,11 @@ Each profile contains:
 ## Follow System
 
 ### Public Profiles
+
 Follow requests are **automatically accepted**.
 
 ### Private Profiles
+
 Follow requests must be **manually approved**.
 
 Users can:
@@ -202,13 +209,13 @@ Open them using:
 
 https://editor.swagger.io
 
-| Spec File | Port | Service |
-|------|------|------|
-| swagger/01-user-service.yaml | 8080 | Auth, profiles, search |
-| swagger/02-social-service.yaml | 8082 | Follow, block |
-| swagger/03-post-service.yaml | 8083 | Posts, media upload |
-| swagger/04-interaction-service.yaml | 8084 | Likes, comments |
-| swagger/05-feed-service.yaml | 8085 | Timeline feed |
+| Spec File                           | Port | Service                |
+| ----------------------------------- | ---- | ---------------------- |
+| swagger/01-user-service.yaml        | 8080 | Auth, profiles, search |
+| swagger/02-social-service.yaml      | 8082 | Follow, block          |
+| swagger/03-post-service.yaml        | 8083 | Posts, media upload    |
+| swagger/04-interaction-service.yaml | 8084 | Likes, comments        |
+| swagger/05-feed-service.yaml        | 8085 | Timeline feed          |
 
 ---
 
@@ -331,6 +338,7 @@ The project demonstrates modern DevOps concepts:
 - scalable service separation
 
 ---
+
 ## Team
 
 Project developed by:
